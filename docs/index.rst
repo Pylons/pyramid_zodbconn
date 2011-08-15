@@ -57,8 +57,7 @@ setting to your of your Pyramid's ``.ini`` file configuration (or to the
    zodbconn.uri = zeo://localhost:9991?cache_size=25MB
    ...
 
-The ``zodbconn.uri`` parameter is a URL which describes a ZODB database (or a
-set of ZODB databases, as per :ref:`multidatabase`).
+The ``zodbconn.uri`` parameter is a URL which describes a ZODB database.
 
 Once you've both included the ``pyramid_zodbconn`` into your configuration
 via ``config.include('pyramid_zodbconn')`` and you've added a
@@ -337,45 +336,6 @@ Example
 An example that combines a dbname with a query string::
 
    memory://storagename?connection_cache_size=100&database_name=fleeb
-
-.. _multidatabase:
-
-Multi-Database Support
-----------------------
-
-You can connect to multiple ZODB databases by providing a list of URIs, or a
-series of URIs separated by carriage returns or whitespace characters in the
-``zodbconn.uri`` setting. Multi-databases allow you to apply different data
-management policies for different kinds of data; for example, you might store
-session data in a more volatile database.
-
-The first URI in the list specifies the root database. Each URI must have a
-distinct and explicit ``database_name``. The ``database_name`` is used in all
-cross-database references, so do not change the ``database_name`` once you
-have stored data, or you will break the references.
-
-An example multi-database application configuration:
-
-.. code-block:: ini
-
-   [app:myapp]
-   ...
-   zodbconn.uri = zeo://localhost:9991?database_name=main&cache_size=25MB
-                  zeo://localhost:9991/?database_name=catalog&storage=catalog
-   ...
-
-When you obtain the connection:
-
-.. code-block:: python
-   :linenos:
-
-   def arootfactory(request):
-       conn = get_connection(request)
-       root = conn.root()
-
-In this example, ``root`` is an object in the database named ``main``, since
-that ``main`` database is listed first in the URIs.  You can get at the other
-databases by doing.. what?  XXX
 
 More Information
 ----------------

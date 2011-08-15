@@ -29,7 +29,7 @@ install_requires = [
     ]
 
 setup(name='pyramid_zodbconn',
-      version='0.0',
+      version='0.1',
       description=('A package which provides integration betwen Pyramid and '
                    'ZODB'),
       long_description=README + '\n\n' + CHANGES,
