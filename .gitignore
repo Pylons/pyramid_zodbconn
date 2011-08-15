@@ -1,0 +1,16 @@
+*.egg
+*.egg-info
+*.pyc
+*$py.class
+*.pt.py
+*.txt.py
+*~
+.coverage
+build/
+dist/
+.tox/
+nosetests.xml
+pyramid_zodbconn/coverage.xml
+env26/
+env27/
+env25/

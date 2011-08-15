@@ -1,0 +1,401 @@
+pyramid_zodbconn
+================
+
+Overview
+--------
+
+A package which provides integration between the Pyramid web application
+server and the :term:`ZODB` object database.
+
+.. warning:: This package currently will not work with any released Pyramid;
+   it requires the Pyramid trunk (aka "1.2dev").
+
+Installation
+------------
+
+Install using setuptools, e.g. (within a virtualenv)::
+
+  $ easy_install pyramid_zodbconn
+
+Setup
+-----
+
+Once ``pyramid_zodbconn`` is installed, you must use the ``config.include``
+mechanism to include it into your Pyramid project's configuration.  In your
+Pyramid project's ``__init__.py``:
+
+.. code-block:: python
+   :linenos:
+
+   config = Configurator(.....)
+   config.include('pyramid_zodbconn')
+
+Alternately you can use the ``pyramid.includes`` configuration value in your
+``.ini`` file:
+
+.. code-block:: ini
+   :linenos:
+
+   [app:myapp]
+   pyramid.includes = pyramid_zodbconn
+
+Using
+-----
+
+For :mod:`pyramid_zodbconn` to work properly, you must add at least one
+setting to your of your Pyramid's ``.ini`` file configuration (or to the
+``settings`` dictionary if you're not using ini configuration):
+``zodbconn.uri``.  For example:
+
+.. code-block:: ini
+
+   [app:myapp]
+   ...
+   zodbconn.uri = zeo://localhost:9991?cache_size=25MB
+   ...
+
+The ``zodbconn.uri`` parameter is a URL which describes a ZODB database (or a
+set of ZODB databases, as per :ref:`multidatabase`).
+
+Once you've both included the ``pyramid_zodbconn`` into your configuration
+via ``config.include('pyramid_zodbconn')`` and you've added a
+``zodbconn.uri`` setting to your configuration, you can then use the
+:func:`pyramid_zodbconn.get_connection` API in your Pyramid application, most
+commonly in a Pyramid *root factory*:
+
+.. code-block:: python
+   :linenos:
+
+    from pyramid_zodbconn import get_connection
+    from persistent.mapping import PersistentMapping
+
+    class MyModel(PersistentMapping):
+        __parent__ = __name__ = None
+
+    def root_factory(request):
+        conn = get_connection(request)
+        zodb_root = conn.root()
+        if not 'app_root' in zodb_root:
+            app_root = MyModel()
+            zodb_root['app_root'] = app_root
+            import transaction
+            transaction.commit()
+        return zodb_root['app_root']
+
+The :func:`pyramid_zodbconn.get_connection` API returns a ZODB connection to
+the main database you've specified via ``zodbconn.uri`` in your
+configuration.
+
+When the request is finalized, the connection you've opened via
+``get_connection`` will be closed.
+
+URI Schemes
+-----------
+
+The URI schemes currently recognized in the ``zodbconn.uri`` setting are
+``file://``, ``zeo://``, ``zconfig://`` and ``memory://``.  Documentation for
+these URI scheme syntaxes are below.
+
+``file://`` URI scheme
+~~~~~~~~~~~~~~~~~~~~~~
+
+The ``file://`` URI scheme can be passed as ``zodbconn.uri`` to create a ZODB
+FileStorage database factory.  The path info section of this scheme should
+point at a filesystem file path that should contain the filestorage data.
+For example::
+
+  file:///my/absolute/path/to/Data.fs
+
+The URI scheme also accepts query string arguments.  The query string
+arguments honored by this scheme are as follows.
+
+FileStorage constructor related
++++++++++++++++++++++++++++++++
+
+These arguments generally inform the FileStorage constructor about
+values of the same names.
+
+create
+  boolean
+read_only
+  boolean
+quota
+  bytesize
+
+Database-related
+++++++++++++++++
+
+These arguments relate to the database (as opposed to storage)
+settings.
+
+database_name
+  string
+
+Connection-related
+++++++++++++++++++
+
+These arguments relate to connections created from the database.
+
+connection_cache_size
+  integer (default 10000)
+connection_pool_size
+  integer (default 7)
+
+Blob-related
+++++++++++++
+
+If these arguments exist, they control the blob settings for this
+storage.
+
+blobstorage_dir
+  string
+blobstorage_layout
+  string
+
+Misc
+++++
+
+demostorage 
+  boolean (if true, wrap FileStorage in a DemoStorage)
+
+Example
++++++++
+
+An example that combines a path with a query string::
+
+   file:///my/Data.fs?connection_cache_size=100&blobstorage_dir=/foo/bar
+
+``zeo://`` URI scheme
+~~~~~~~~~~~~~~~~~~~~~~
+
+The ``zeo://`` URI scheme can be passed as ``zodbconn.uri`` to create a ZODB
+ClientStorage database factory. Either the host and port parts of this scheme
+should point at a hostname/portnumber combination e.g.::
+
+  zeo://localhost:7899
+
+Or the path part should point at a UNIX socket name::
+
+  zeo:///path/to/zeo.sock
+
+The URI scheme also accepts query string arguments.  The query string
+arguments honored by this scheme are as follows.
+
+ClientStorage-constructor related
++++++++++++++++++++++++++++++++++
+
+These arguments generally inform the ClientStorage constructor about
+values of the same names.
+
+storage
+  string
+cache_size
+  bytesize
+name
+  string
+client
+  string
+debug
+  boolean
+var
+  string
+min_disconnect_poll
+  integer
+max_disconnect_poll
+  integer
+wait
+  boolean
+wait_timeout
+  integer
+read_only
+  boolean
+read_only_fallback
+  boolean
+username
+  string
+password
+  string
+realm
+  string
+blob_dir
+  string
+shared_blob_dir
+  boolean
+
+Misc
+++++
+
+demostorage
+  boolean (if true, wrap ClientStorage in a DemoStorage)
+
+Connection-related
+++++++++++++++++++
+
+These arguments relate to connections created from the database.
+
+connection_cache_size
+  integer (default 10000)
+connection_pool_size
+  integer (default 7)
+
+Database-related
+++++++++++++++++
+
+These arguments relate to the database (as opposed to storage)
+settings.
+
+database_name
+  string
+
+Example
++++++++
+
+An example that combines a path with a query string::
+
+  zeo://localhost:9001?connection_cache_size=20000
+
+``zconfig://`` URI scheme
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``zconfig://`` URI scheme can be passed as ``zodbconn.uri`` to create any
+kind of storage that ZODB can load via ZConfig. The path info section of this
+scheme should point at a ZConfig file on the filesystem. Use an optional
+fragment identifier to specify which database to open. This URI scheme does
+not use query string parameters.
+
+Examples
+++++++++
+
+An example ZConfig file::
+
+    <zodb>
+      <mappingstorage>
+      </mappingstorage>
+    </zodb>
+
+If that configuration file is located at /etc/myapp/zodb.conf, use the
+following URI to open the database::
+
+    zconfig:///etc/myapp/zodb.conf
+
+A ZConfig file can specify more than one database.  For example::
+
+    <zodb temp1>
+      <mappingstorage>
+      </mappingstorage>
+    </zodb>
+    <zodb temp2>
+      <mappingstorage>
+      </mappingstorage>
+    </zodb>
+
+In that case, use a URI with a fragment identifier::
+
+    zconfig:///etc/myapp/zodb.conf#temp1
+
+``memory://`` URI scheme
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``memory://`` URI scheme can be passed as ``zodbconn.uri`` to create a
+ZODB MappingStorage (memory-based) database factory.  The path info section
+of this scheme should be a storage name.  For example::
+
+  memory://storagename
+
+However, the storage name is usually omitted, and the most common form is::
+
+  memory://
+
+The URI scheme also accepts query string arguments.  The query string
+arguments honored by this scheme are as follows.
+
+Database-related
+++++++++++++++++
+
+These arguments relate to the database (as opposed to storage)
+settings.
+
+database_name
+  string
+
+Connection-related
+++++++++++++++++++
+
+These arguments relate to connections created from the database.
+
+connection_cache_size
+  integer (default 10000)
+connection_pool_size
+  integer (default 7)
+
+Example
++++++++
+
+An example that combines a dbname with a query string::
+
+   memory://storagename?connection_cache_size=100&database_name=fleeb
+
+.. _multidatabase:
+
+Multi-Database Support
+----------------------
+
+You can connect to multiple ZODB databases by providing a list of URIs, or a
+series of URIs separated by carriage returns or whitespace characters in the
+``zodbconn.uri`` setting. Multi-databases allow you to apply different data
+management policies for different kinds of data; for example, you might store
+session data in a more volatile database.
+
+The first URI in the list specifies the root database. Each URI must have a
+distinct and explicit ``database_name``. The ``database_name`` is used in all
+cross-database references, so do not change the ``database_name`` once you
+have stored data, or you will break the references.
+
+An example multi-database application configuration:
+
+.. code-block:: ini
+
+   [app:myapp]
+   ...
+   zodbconn.uri = zeo://localhost:9991?database_name=main&cache_size=25MB
+                  zeo://localhost:9991/?database_name=catalog&storage=catalog
+   ...
+
+When you obtain the connection:
+
+.. code-block:: python
+   :linenos:
+
+   def arootfactory(request):
+       conn = get_connection(request)
+       root = conn.root()
+
+In this example, ``root`` is an object in the database named ``main``, since
+that ``main`` database is listed first in the URIs.  You can get at the other
+databases by doing.. what?  XXX
+
+More Information
+----------------
+
+.. toctree::
+   :maxdepth: 1
+
+   api.rst
+   glossary.rst
+
+
+Reporting Bugs / Development Versions
+-------------------------------------
+
+Visit http://github.com/Pylons/pyramid_zodbconn to download development or
+tagged versions.
+
+Visit http://github.com/Pylons/pyramid_zodbconn/issues to report bugs.
+
+Indices and tables
+------------------
+
+* :ref:`glossary`
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
