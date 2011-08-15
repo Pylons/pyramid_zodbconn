@@ -2,6 +2,8 @@ from pyramid_zodbconn.uri import db_from_uri
 from pyramid.exceptions import ConfigurationError
 
 def get_connection(request):
+    """ Obtain a connection from the database set up as ``zodbconn.uri`` in
+    the current configuration.  ``request`` must be a Pyramid request object."""
     # not a tween.  rationale: tweens don't get called until the router accepts
     # a request.  during paster shell, paster ptweens, etc, the router is
     # never invoked
@@ -34,6 +36,7 @@ def includeme(config, db_from_uri=db_from_uri):
 
     This tween configured to be placed 'above' the 'tm' tween.
     """
+    # db_from_uri in
     uri = config.registry.settings.get('zodbconn.uri')
     if uri is None:
         config.registry.zodb_database = None

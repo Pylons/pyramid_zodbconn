@@ -7,5 +7,7 @@
 
 .. autofunction:: includeme
 
+.. autofunction:: get_connection
+
 
 
