@@ -1,4 +1,5 @@
-from pyramid_zodbconn.uri import db_from_uri
+from zodburi import resolve_uri
+from ZODB import DB
 from pyramid.exceptions import ConfigurationError
 
 def get_connection(request):
@@ -22,6 +23,11 @@ def get_connection(request):
             zodb_conn.close()
         request.add_finished_callback(finished)
     return zodb_conn
+
+def db_from_uri(uri, resolve_uri=resolve_uri):
+    storage_factory, dbkw = resolve_uri(uri)
+    storage = storage_factory()
+    return DB(storage, **dbkw)
 
 def includeme(config, db_from_uri=db_from_uri):
     """

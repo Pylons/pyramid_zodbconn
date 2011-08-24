@@ -61,6 +61,18 @@ class Test_includeme(unittest.TestCase):
         self._callFUT(self.config)
         self.assertEqual(self.config.registry.zodb_database, None)
 
+class Test_db_from_uri(unittest.TestCase):
+    def test_it(self):
+        from pyramid_zodbconn import db_from_uri
+        from ZODB.MappingStorage import MappingStorage
+        storage = MappingStorage()
+        def resolve_uri(uri):
+            def storagefactory():
+                return storage
+            return storagefactory, {}
+        db = db_from_uri('whatever', resolve_uri=resolve_uri)
+        self.assertEqual(db._storage, storage)
+
 class DummyDB:
     def __init__(self):
         self.databases = {'unnamed': self}
