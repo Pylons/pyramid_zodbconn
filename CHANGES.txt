@@ -1,8 +1,8 @@
-Next release
-------------
+0.2 (2011-08-24)
+----------------
 
-- Depend on ``zodburi`` rather than implementing our own URI resolvers and
-  datatypes.
+- Depend on the ``zodburi`` package rather than implementing our own URI
+  resolvers and datatypes.
 
 0.1 (2011-08-14)
 ----------------

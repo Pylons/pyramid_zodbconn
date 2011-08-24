@@ -7,9 +7,6 @@ Overview
 A package which provides integration between the Pyramid web application
 server and the :term:`ZODB` object database.
 
-.. warning:: This package currently will not work with any released Pyramid;
-   it requires the Pyramid trunk (aka "1.2dev").
-
 It will run under CPython 2.5, 2.6, and 2.7.  It will not run under PyPy or
 Jython.  It requires ZODB >= 3.10.0.
 

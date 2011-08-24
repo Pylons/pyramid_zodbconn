@@ -24,13 +24,13 @@ except IOError:
     README = CHANGES = ''
 
 install_requires = [
-    'pyramid>=1.2dev',
+    'pyramid',
     'zodburi',
     'ZODB3>=3.10',
     ]
 
 setup(name='pyramid_zodbconn',
-      version='0.1',
+      version='0.2',
       description=('A package which provides integration betwen Pyramid and '
                    'ZODB'),
       long_description=README + '\n\n' + CHANGES,
