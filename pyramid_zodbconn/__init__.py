@@ -31,16 +31,11 @@ def db_from_uri(uri, resolve_uri=resolve_uri):
 
 def includeme(config, db_from_uri=db_from_uri):
     """
-    Set up am implicit :term:`tween` to make a ZODB connection available
-    to your Pyramid application.
-
     This includeme recognizes a ``zodbconn.uri`` setting in your deployment
-    settings::
+    settings and creates a ZODB database if it finds one::
 
         zodbconn.uri: The database URI or URIs (either a whitespace-delimited
         string, a carriage-return-delimed string or a list of strings).  
-
-    This tween configured to be placed 'above' the 'tm' tween.
     """
     # db_from_uri in
     uri = config.registry.settings.get('zodbconn.uri')
