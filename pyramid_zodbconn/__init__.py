@@ -19,6 +19,9 @@ def get_connection(request, dbname=None):
     # a request.  during paster shell, paster ptweens, etc, the router is
     # never invoked
 
+    # if this all looks very strange to you, please read:
+    # http://svn.zope.org/ZODB/trunk/src/ZODB/tests/multidb.txt?rev=99605&view=markup
+
     registry = request.registry
 
     primary_conn = getattr(request, '_primary_zodb_conn', None)
