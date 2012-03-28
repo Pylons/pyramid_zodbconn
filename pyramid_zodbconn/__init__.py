@@ -3,9 +3,15 @@ from ZODB import DB
 from pyramid.exceptions import ConfigurationError
 
 def get_connection(request, dbname=None):
-    """ Obtain a connection from the database set up as ``zodbconn.uri`` in
-    the current configuration.  ``request`` must be a Pyramid request object.
-    If you're using named databases, ``dbname`` must be the name of a
+    """
+    ``request`` must be a Pyramid request object.
+    
+    When called with no ``dbname`` argument or a ``dbname`` argument of
+    ``None``, return a connection to the primary datbase (the database set
+    up as ``zodbconn.uri`` in the current configuration).
+
+    If you're using named databases, you can obtain a connection to a named
+    database by passing its name as ``dbname``.  It must be the name of a
     database (e.g. if you've added ``zodbconn.uri.foo`` to the configuration,
     it should be ``foo``).
     """
@@ -14,53 +20,69 @@ def get_connection(request, dbname=None):
     # never invoked
 
     registry = request.registry
-    zodb_conns = getattr(request, '_zodb_conns', None)
 
-    if zodb_conns is None:
-        zodb_conns = request._zodb_conns = {}
+    primary_conn = getattr(request, '_primary_zodb_conn', None)
 
-    conn = zodb_conns.get(dbname)
-    if conn is not None:
-        return conn
+    if primary_conn is None:
 
-    zodb_dbs = getattr(registry, '_zodb_databases', None)
-    if zodb_dbs is None:
-        raise ConfigurationError(
-            'pyramid_zodbconn not included in configuration')
+        zodb_dbs = getattr(registry, '_zodb_databases', None)
 
-    db = zodb_dbs.get(dbname)
-    if db is None:
-        if dbname is None:
-            msg = 'No zodbconn.uri defined in Pyramid settings'
-        else:
-            msg = 'No zodbconn.uri.%s defined in Pyramid settings' % dbname
-        raise ConfigurationError(msg)
+        if zodb_dbs is None:
+            raise ConfigurationError(
+                'pyramid_zodbconn not included in configuration')
 
-    zodbconn = db.open()
-    zodb_conns[dbname] = zodbconn
+        primary_db = zodb_dbs.get('')
+
+        if primary_db is None:
+            raise ConfigurationError(
+                'No zodbconn.uri defined in Pyramid settings')
+
+        primary_conn = primary_db.open()
+
+        def finished(request):
+            # closing the primary also closes any secondaries opened
+            primary_conn.transaction_manager.abort()
+            primary_conn.close()
+
+        request.add_finished_callback(finished)
+        request._primary_zodb_conn = primary_conn
+
+    if dbname is None:
+        return primary_conn
     
-    def finished(request):
-        del request._zodb_conns[dbname]
-        zodbconn.transaction_manager.abort()
-        zodbconn.close()
+    try:
+        conn = primary_conn.get_connection(dbname)
+    except KeyError:
+        raise ConfigurationError(
+            'No zodbconn.uri.%s defined in Pyramid settings' % dbname)
 
-    request.add_finished_callback(finished)
-    return zodbconn
+    return conn
 
-def db_from_uri(uri, resolve_uri=resolve_uri):
+def db_from_uri(uri, dbname, dbmap, resolve_uri=resolve_uri):
     storage_factory, dbkw = resolve_uri(uri)
+    dbkw['database_name'] = dbname
     storage = storage_factory()
-    return DB(storage, **dbkw)
+    return DB(storage, databases=dbmap, **dbkw)
 
 NAMED = 'zodbconn.uri.'
 
 def get_uris(settings):
-    uri = settings.get('zodbconn.uri')
-    if uri is not None:
-       yield None, uri
+    named = []
     for k, v in settings.items():
         if k.startswith(NAMED):
-            yield (k[len(NAMED):], v)
+            name = k[len(NAMED):]
+            if not name:
+                raise ConfigurationError(
+                    '%s is not a valid zodbconn identifier' % k)
+            named.append((name, v))
+    primary = settings.get('zodbconn.uri')
+    if primary is None and named:
+        raise ConfigurationError(
+            'Must have primary zodbconn.uri in settings containing named uris')
+    if primary:
+        yield '', primary
+        for name, uri in named:
+            yield name, uri
 
 def includeme(config, db_from_uri=db_from_uri):
     """
@@ -69,7 +91,8 @@ def includeme(config, db_from_uri=db_from_uri):
     is the database URI or URIs (either a whitespace-delimited string, a
     carriage-return-delimed string or a list of strings).
 
-    It will also recognized *named* database URIs:
+    It will also recognized *named* database URIs as long as an unnamed
+    database is in the configuration too:
 
         zodbconn.uri.sessions = file:///home/project/var/Data.fs
     
@@ -77,5 +100,5 @@ def includeme(config, db_from_uri=db_from_uri):
     # db_from_uri in
     databases = config.registry._zodb_databases = {}
     for name, uri in get_uris(config.registry.settings):
-        databases[name] = db_from_uri(uri)
+        db_from_uri(uri, name, databases) # side effect: populate "databases"
         
