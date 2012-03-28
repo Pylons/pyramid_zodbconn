@@ -100,19 +100,20 @@ example:
 
    [app:myapp]
    ...
-   zodbconn.uri.main = zeo://localhost:9991?cache_size=25MB
+   zodbconn.uri = zeo://localhost:9991?cache_size=25MB
    zodbconn.uri.sessions = zeo://localhost:9992?cache_size=100MB
    ...
 
 Once this is done, you can use :func:`pyramid_zodbconn.get_connection` to
 obtain a reference to each of the named databases:
 
-        main_conn = get_connection(request, 'main')
+        main_conn = get_connection(request) # main database
         sessions_conn = get_connection(request, 'sessions')
 
-The ``zodbconn.uri.foo`` parameter is a URL which describes a ZODB database,
-the same as ``zodbconn.uri``.  You can combine named and unnamed database
-configuration in the same application.
+The ``zodbconn.uri.sessions`` parameter example above is a URI which
+describes a ZODB database, in the same format as ``zodbconn.uri``.  You can
+combine named and unnamed database configuration in the same application.
+You *must* have at least one primary database to use named databases.
 
 URI Schemes
 -----------
