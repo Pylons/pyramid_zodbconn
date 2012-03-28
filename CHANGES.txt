@@ -1,5 +1,5 @@
-Next release
-------------
+0.3 (2012-03-28)
+----------------
 
 - Includeme docstring fix.
 
