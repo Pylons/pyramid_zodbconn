@@ -14,3 +14,4 @@ pyramid_zodbconn/coverage.xml
 env26/
 env27/
 env25/
+docs/_build/
