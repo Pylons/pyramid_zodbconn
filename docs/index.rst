@@ -115,6 +115,10 @@ describes a ZODB database, in the same format as ``zodbconn.uri``.  You can
 combine named and unnamed database configuration in the same application.
 You *must* have at least one primary database to use named databases.
 
+.. note::
+
+   Named database support is new as of ``pyramid_zodbconn`` 0.3.
+
 URI Schemes
 -----------
 

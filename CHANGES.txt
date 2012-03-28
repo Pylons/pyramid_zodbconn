@@ -3,7 +3,8 @@ Next release
 
 - Includeme docstring fix.
 
-- Add named database capability.
+- Add named database capability (see new docs section entitled "Named
+  Database Support").
 
 0.2 (2011-08-24)
 ----------------
