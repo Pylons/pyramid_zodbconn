@@ -88,6 +88,32 @@ configuration.
 When the request is finalized, the connection you've opened via
 ``get_connection`` will be closed.
 
+Named Databases
+---------------
+
+If you need to use more than one ZODB database in your Pyramid application,
+you can use *named* databases via configuration.  Named databases are
+specified by ``zodbconn.uri.thename`` in settings configuration.  For
+example:
+
+.. code-block:: ini
+
+   [app:myapp]
+   ...
+   zodbconn.uri.main = zeo://localhost:9991?cache_size=25MB
+   zodbconn.uri.sessions = zeo://localhost:9992?cache_size=100MB
+   ...
+
+Once this is done, you can use :func:`pyramid_zodbconn.get_connection` to
+obtain a reference to each of the named databases:
+
+        main_conn = get_connection(request, 'main')
+        sessions_conn = get_connection(request, 'sessions')
+
+The ``zodbconn.uri.foo`` parameter is a URL which describes a ZODB database,
+the same as ``zodbconn.uri``.  You can combine named and unnamed database
+configuration in the same application.
+
 URI Schemes
 -----------
 
