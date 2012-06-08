@@ -123,6 +123,8 @@ class DummyDB:
         self.connection = DummyConnection(connections)
     def open(self):
         return self.connection
+    def setActivityMonitor(self, am):
+        pass
 
 class DummyTransactionManager:
     aborted = False

@@ -1,5 +1,6 @@
 from zodburi import resolve_uri
 from ZODB import DB
+from ZODB.ActivityMonitor import ActivityMonitor
 from pyramid.exceptions import ConfigurationError
 
 def get_connection(request, dbname=None):
@@ -94,7 +95,9 @@ def includeme(config, db_from_uri=db_from_uri):
     is the database URI or URIs (either a whitespace-delimited string, a
     carriage-return-delimed string or a list of strings).
 
-    It will also recognized *named* database URIs as long as an unnamed
+    Database is activated with `ZODB.ActivityMonitor.ActivityMonitor`.
+
+    It will also recognize *named* database URIs as long as an unnamed
     database is in the configuration too:
 
         zodbconn.uri.sessions = file:///home/project/var/Data.fs
@@ -103,5 +106,5 @@ def includeme(config, db_from_uri=db_from_uri):
     # db_from_uri in
     databases = config.registry._zodb_databases = {}
     for name, uri in get_uris(config.registry.settings):
-        db_from_uri(uri, name, databases) # side effect: populate "databases"
-        
+        db = db_from_uri(uri, name, databases) # side effect: populate "databases"
+        db.setActivityMonitor(ActivityMonitor())
