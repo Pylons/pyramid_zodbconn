@@ -104,7 +104,15 @@ class Test_includeme(unittest.TestCase):
         from pyramid.exceptions import ConfigurationError
         self.config.registry.settings['zodbconn.uri.foo'] = 'uri.foo'
         self.assertRaises(ConfigurationError, self._callFUT, self.config)
-        
+
+    def test_activity_monitor_present(self):
+        self.config.registry.settings['zodbconn.uri'] = 'uri'
+        self._callFUT(self.config)
+        db = self.config.registry._zodb_databases['']
+        am = db.getActivityMonitor()
+        self.assertTrue(am)
+
+
 class Test_db_from_uri(unittest.TestCase):
     def test_it(self):
         from pyramid_zodbconn import db_from_uri
@@ -124,7 +132,9 @@ class DummyDB:
     def open(self):
         return self.connection
     def setActivityMonitor(self, am):
-        pass
+        self.am = am
+    def getActivityMonitor(self):
+        return getattr(self, 'am', None)
 
 class DummyTransactionManager:
     aborted = False
