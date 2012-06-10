@@ -98,3 +98,4 @@ Contributors
 ------------
 
 - Chris McDonough, 2011/08/11
+- Domen Kožar, 2012/06/10
