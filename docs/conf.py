@@ -64,7 +64,7 @@ extensions = [
 # Looks for pyramid's objects
 intersphinx_mapping = {
     'pyramid':
-    ('http://docs.pylonsproject.org/projects/pyramid/dev/', None)}
+    ('http://docs.pylonsproject.org/projects/pyramid/en/latest/', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
@@ -83,7 +83,7 @@ copyright = '2011, Agendaless Consulting <chrism@plope.com>'
 # other places throughout the built documents.
 #
 # The short X.Y version.
-version = '0.3'
+version = '0.4'
 # The full version, including alpha/beta/rc tags.
 release = version
 

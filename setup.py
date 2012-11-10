@@ -29,8 +29,11 @@ install_requires = [
     'ZODB3>=3.10',
     ]
 
+docs_extras = ['Sphinx']
+testing_extras = ['nose', 'coverage']
+
 setup(name='pyramid_zodbconn',
-      version='0.3',
+      version='0.4',
       description=('A package which provides integration betwen Pyramid and '
                    'ZODB'),
       long_description=README + '\n\n' + CHANGES,
@@ -53,4 +56,8 @@ setup(name='pyramid_zodbconn',
       tests_require=install_requires,
       test_suite="pyramid_zodbconn",
       entry_points='',
+      extras_require = {
+          'testing':testing_extras,
+          'docs':docs_extras,
+          },
       )

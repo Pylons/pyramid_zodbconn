@@ -1,5 +1,5 @@
-Next release
-------------
+0.4 (2012-11-10)
+----------------
 
 - Configure database with `ZODB.ActivityMonitor.ActivityMonitor`
 
