@@ -88,8 +88,8 @@ class Test_includeme(unittest.TestCase):
         self.config.registry.settings['zodbconn.uri.foo'] = 'uri.foo'
         self.config.registry.settings['zodbconn.uri.bar'] = 'uri.bar'
         self._callFUT(self.config)
-        self.assertEqual(self.config.captured_uris, 
-                         ['uri', 'uri.foo', 'uri.bar'])
+        self.assertEqual(sorted(self.config.captured_uris),
+                         ['uri', 'uri.bar', 'uri.foo'])
         self.assertEqual(self.config.registry._zodb_databases[''], self.db)
         self.assertEqual(self.config.registry._zodb_databases['foo'], self.db)
         self.assertEqual(self.config.registry._zodb_databases['bar'], self.db)
