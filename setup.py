@@ -13,6 +13,7 @@
 ##############################################################################
 
 import os
+import sys
 
 from setuptools import setup, find_packages
 
@@ -23,11 +24,24 @@ try:
 except IOError:
     README = CHANGES = ''
 
-install_requires = [
-    'pyramid',
-    'zodburi',
-    'ZODB3>=3.10',
-    ]
+
+if sys.version_info < (3,):
+    install_requires = [
+        'pyramid',
+        'zodburi',
+        'ZODB3>=3.10',
+        'zope.interface',
+        ]
+else:
+    install_requires = [
+        'pyramid',
+        'zodburi',
+        'ZODB>=4.0.0b2',
+        'ZEO>=4.0.0b1',
+        'zope.interface',
+        ]
+# transitive dep via mako:  0.16 breaks Py3.2
+install_requires.insert(0, 'MarkupSafe==0.15')
 
 docs_extras = ['Sphinx']
 testing_extras = ['nose', 'coverage']
