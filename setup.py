@@ -40,8 +40,6 @@ else:
         'ZEO>=4.0.0b1',
         'zope.interface',
         ]
-# transitive dep via mako:  0.16 breaks Py3.2
-install_requires.insert(0, 'MarkupSafe==0.15')
 
 docs_extras = ['Sphinx']
 testing_extras = ['nose', 'coverage']
