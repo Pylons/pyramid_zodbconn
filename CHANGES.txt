@@ -1,6 +1,8 @@
 Unreleased
 ----------
 
+- Remove transitive dependencies of ``zodburi``.
+
 - Add support for Python 3.2 / 3.3, and test them under ``tox``.
 
 0.4 (2012-11-10)

@@ -29,16 +29,11 @@ if sys.version_info < (3,):
     install_requires = [
         'pyramid',
         'zodburi',
-        'ZODB3>=3.10',
-        'zope.interface',
         ]
 else:
     install_requires = [
         'pyramid',
         'zodburi',
-        'ZODB>=4.0.0b2',
-        'ZEO>=4.0.0b1',
-        'zope.interface',
         ]
 
 docs_extras = ['Sphinx']
