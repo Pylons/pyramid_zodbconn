@@ -1,3 +1,12 @@
+Next release
+------------
+
+- Add ``zodbconn.transferlog`` feature, which sends information about ZODB
+  storage loads and stores to a CSV file.
+
+- Add ZODBConnectionOpened, ZODBConnectionWillClose, and ZODBConnectionClosed
+  events, which can be subscribed to.
+
 0.5 (2014-01-04)
 ----------------
 
