@@ -372,13 +372,13 @@ All events are sent via the standard Pyramid ``registry.notify`` interface and
 can be subscribed to using the ``config.add_subscriber`` API in Pyramid.
 
 When a connection is opened, the
-:class:`pyramid_zodbconn.ZODBConnectionOpened`` event is sent.
+:class:`pyramid_zodbconn.ZODBConnectionOpened` event is sent.
 
 Just before a connection is closed, the
-:class:`pyramid_zodbconn.ZODBConnectionWillBeClosed`` event is sent.
+:class:`pyramid_zodbconn.ZODBConnectionWillClose` event is sent.
 
 When a connection is closed, the
-:class:`pyramid_zodbconn.ZODBConnectionClosed`` event is sent.
+:class:`pyramid_zodbconn.ZODBConnectionClosed` event is sent.
 
 Transfer Log
 ------------
