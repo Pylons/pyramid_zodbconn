@@ -62,7 +62,7 @@ class Test_includeme(unittest.TestCase):
     def tearDown(self):
         testing.tearDown()
     
-    def _callFUT(self, config, db_from_uri=None):
+    def _callFUT(self, config, db_from_uri=None, open=open):
         config.captured_uris = []
         self.db = DummyDB()
         if db_from_uri is None:
@@ -71,7 +71,7 @@ class Test_includeme(unittest.TestCase):
                 dbmap[dbname] = self.db
                 return self.db
         from pyramid_zodbconn import includeme
-        return includeme(config, db_from_uri=db_from_uri)
+        return includeme(config, db_from_uri=db_from_uri, open=open)
 
     def test_with_uri(self):
         self.config.registry.settings['zodbconn.uri'] = 'uri'
@@ -112,6 +112,32 @@ class Test_includeme(unittest.TestCase):
         am = db.getActivityMonitor()
         self.assertTrue(am)
 
+    def test_with_txlog_stdout(self):
+        import sys
+        L = []
+        self.config.add_subscriber = lambda func, event: L.append((func, event))
+        self.config.registry.settings['zodbconn.uri'] = 'uri'
+        self.config.registry.settings['zodbconn.transferlog'] = ''
+        self._callFUT(self.config)
+        self.assertEqual(len(L), 2)
+        self.assertEqual(L[0][0].__name__, 'start')
+        self.assertEqual(L[1][0].__name__, 'end')
+        self.assertEqual(self.config.registry._transferlog.stream, sys.stdout)
+
+    def test_with_txlog_filename(self):
+        L = []
+        self.config.add_subscriber = lambda func, event: L.append((func, event))
+        self.config.registry.settings['zodbconn.uri'] = 'uri'
+        self.config.registry.settings['zodbconn.transferlog'] = 'foo'
+        opened = []
+        def fake_open(name, mode):
+            opened.append((name, mode))
+        self._callFUT(self.config, open=fake_open)
+        self.assertEqual(len(L), 2)
+        self.assertEqual(L[0][0].__name__, 'start')
+        self.assertEqual(L[1][0].__name__, 'end')
+        self.assertEqual(self.config.registry._transferlog.stream, None)
+        self.assertEqual(opened, [('foo',  'a')])
 
 class Test_db_from_uri(unittest.TestCase):
     def test_it(self):
@@ -124,6 +150,38 @@ class Test_db_from_uri(unittest.TestCase):
             return storagefactory, {}
         db = db_from_uri('whatever', 'name', {}, resolve_uri=resolve_uri)
         self.assertEqual(db._storage, storage)
+
+class TestTransferLog(unittest.TestCase):
+    def _makeOne(self, stream=None):
+        from pyramid_zodbconn import TransferLog
+        if stream is None:
+            import io
+            stream = io.StringIO()
+        return TransferLog(stream)
+
+    def test_start(self):
+        inst = self._makeOne()
+        event = DummyZODBEvent()
+        inst.start(event)
+        self.assertEqual(
+            inst.requests[id(event.request)],
+            {'loads':0, 'stores':0}
+            )
+
+    def test_end_info_is_None(self):
+        inst = self._makeOne()
+        event = DummyZODBEvent()
+        inst.end(event)
+        self.assertEqual(inst.requests, {})
+        self.assertEqual(inst.stream.getvalue(), '')
+
+    def test_end_info_is_not_None(self):
+        inst = self._makeOne()
+        event = DummyZODBEvent()
+        inst.requests[id(event.request)] = {'loads':1, 'stores':1}
+        inst.end(event)
+        self.assertEqual(inst.requests, {})
+        self.assertEqual(inst.stream.getvalue(), '"GET","",-1,-1\n')
 
 class DummyDB:
     def __init__(self, connections=None):
@@ -147,11 +205,18 @@ class DummyConnection:
     def __init__(self, connections=None):
         self.transaction_manager = DummyTransactionManager()
         self.connections = connections or {}
+        self.transfer_counts = (0, 0)
 
     def close(self):
         self.closed = True
 
     def get_connection(self, name):
         return self.connections[name]
-    
 
+    def getTransferCounts(self):
+        return self.transfer_counts
+
+class DummyZODBEvent(object):
+    def __init__(self):
+        self.conn = DummyConnection()
+        self.request = testing.DummyRequest()

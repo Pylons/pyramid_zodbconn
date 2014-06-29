@@ -1,7 +1,9 @@
+import sys
 from zodburi import resolve_uri
 from ZODB import DB
 from ZODB.ActivityMonitor import ActivityMonitor
 from pyramid.exceptions import ConfigurationError
+from pyramid.compat import text_
 
 def get_connection(request, dbname=None):
     """
@@ -43,10 +45,14 @@ def get_connection(request, dbname=None):
 
         primary_conn = primary_db.open()
 
+        registry.notify(ZODBConnectionOpened(primary_conn, request))
+
         def finished(request):
             # closing the primary also closes any secondaries opened
+            registry.notify(ZODBConnectionWillClose(primary_conn, request))
             primary_conn.transaction_manager.abort()
             primary_conn.close()
+            registry.notify(ZODBConnectionClosed(primary_conn, request))
 
         request.add_finished_callback(finished)
         request._primary_zodb_conn = primary_conn
@@ -88,7 +94,22 @@ def get_uris(settings):
         for name, uri in named:
             yield name, uri
 
-def includeme(config, db_from_uri=db_from_uri):
+class ConnectionEvent(object):
+    def __init__(self, conn, request):
+        self.conn = conn
+        self.request = request
+
+class ZODBConnectionOpened(ConnectionEvent):
+    pass
+
+class ZODBConnectionWillClose(ConnectionEvent):
+    pass
+
+class ZODBConnectionClosed(ConnectionEvent):
+    pass
+
+
+def includeme(config, db_from_uri=db_from_uri, open=open):
     """
     This includeme recognizes a ``zodbconn.uri`` setting in your deployment
     settings and creates a ZODB database if it finds one.  ``zodbconn.uri``
@@ -101,10 +122,46 @@ def includeme(config, db_from_uri=db_from_uri):
     database is in the configuration too:
 
         zodbconn.uri.sessions = file:///home/project/var/Data.fs
-    
+
+    Use the key ``zodbconn.transferlog`` in the deployment settings to specify
+    a filename to write ZODB load/store information to, or leave key's value
+    blank to send to stdout.
     """
     # db_from_uri in
     databases = config.registry._zodb_databases = {}
     for name, uri in get_uris(config.registry.settings):
-        db = db_from_uri(uri, name, databases) # side effect: populate "databases"
+        db = db_from_uri(uri, name, databases)
+        # ^^ side effect: populate "databases"
         db.setActivityMonitor(ActivityMonitor())
+    txlog_filename = config.registry.settings.get('zodbconn.transferlog')
+    if txlog_filename is not None:
+        if txlog_filename.strip() == '':
+            stream = sys.stdout
+        else:
+            stream = open(txlog_filename, 'a')
+        transferlog = TransferLog(stream)
+        config.add_subscriber(transferlog.start, ZODBConnectionOpened)
+        config.add_subscriber(transferlog.end, ZODBConnectionWillClose)
+        config.registry._transferlog = transferlog # for testing only
+
+class TransferLog(object):
+    def __init__(self, stream):
+        self.stream = stream
+        self.requests = {}
+
+    def start(self, event):
+        request_id = id(event.request)
+        info = self.requests[request_id] = {}
+        info['loads'], info['stores'] = event.conn.getTransferCounts()
+
+    def end(self,  event):
+        request_id = id(event.request)
+        info = self.requests.pop(request_id, None)
+        if info is not None:
+            loads_after, stores_after = event.conn.getTransferCounts()
+            loads = loads_after - info['loads']
+            stores = stores_after - info['stores']
+            request_method = event.request.method
+            url = event.request.path_qs
+            value = '"%s","%s",%d,%d\n'  % (request_method, url, loads, stores)
+            self.stream.write(text_(value))
