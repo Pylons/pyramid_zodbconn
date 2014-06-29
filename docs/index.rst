@@ -365,6 +365,46 @@ An example that combines a dbname with a query string::
 
    memory://storagename?connection_cache_size=100&database_name=fleeb
 
+Events
+------
+
+All events are sent via the standard Pyramid ``registry.notify`` interface and
+can be subscribed to using the ``config.add_subscriber`` API in Pyramid.
+
+When a connection is opened, the
+:class:`pyramid_zodbconn.ZODBConnectionOpened`` event is sent.
+
+Just before a connection is closed, the
+:class:`pyramid_zodbconn.ZODBConnectionWillBeClosed`` event is sent.
+
+When a connection is closed, the
+:class:`pyramid_zodbconn.ZODBConnectionClosed`` event is sent.
+
+Transfer Log
+------------
+
+Add the key ``zodbconn.transferlog`` to your deployment settings to have
+``pyramid_zodbconn`` send information about the ZODB stoage loads and stores
+caused by each request sent to the system.  The ``zodbconn.transferlog`` key
+can either be a filename or it can be empty, which indicates that the transfer
+log should be sent to stdout.
+
+For example::
+
+  zodb.transferlog = /some/file/transfer.log
+
+The transfer log is written in CSV format.  Each line is in the format::
+
+  request_method,url,loads,stores
+
+For example::
+
+  "GET","/manage/auditstream-sse",0,0
+  "GET","/manage/publishers/@@manage_main",113,0
+  "GET","/manage/auditstream-sse",0,0
+  "GET","/manage/auditstream-sse",0,0
+  "GET","/manage/publishers/@@contents",24368,0
+
 More Information
 ----------------
 

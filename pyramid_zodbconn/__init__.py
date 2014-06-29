@@ -95,19 +95,21 @@ def get_uris(settings):
             yield name, uri
 
 class ConnectionEvent(object):
+    """ Base class for ZODB connection events.  A connection event has two
+    attributes: ``conn``, and ``request``.  ``conn`` is the ZODB connection
+    related to the event, ``request`` is the request which caused the event."""
     def __init__(self, conn, request):
         self.conn = conn
         self.request = request
 
 class ZODBConnectionOpened(ConnectionEvent):
-    pass
+    """ An event sent when a ZODB connection is opened """
 
 class ZODBConnectionWillClose(ConnectionEvent):
-    pass
+    """ An event sent when a ZODB connection is about to be closed """
 
 class ZODBConnectionClosed(ConnectionEvent):
-    pass
-
+    """ An event sent when a ZODB connection is about to be closed """
 
 def includeme(config, db_from_uri=db_from_uri, open=open):
     """
@@ -127,7 +129,6 @@ def includeme(config, db_from_uri=db_from_uri, open=open):
     a filename to write ZODB load/store information to, or leave key's value
     blank to send to stdout.
     """
-    # db_from_uri in
     databases = config.registry._zodb_databases = {}
     for name, uri in get_uris(config.registry.settings):
         db = db_from_uri(uri, name, databases)
@@ -165,3 +166,4 @@ class TransferLog(object):
             url = event.request.path_qs
             value = '"%s","%s",%d,%d\n'  % (request_method, url, loads, stores)
             self.stream.write(text_(value))
+            self.stream.flush()
