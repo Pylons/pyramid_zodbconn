@@ -1,5 +1,5 @@
-Next release
-------------
+0.6 (2014-06-29)
+----------------
 
 - Add ``zodbconn.transferlog`` feature, which sends information about ZODB
   storage loads and stores to a CSV file.

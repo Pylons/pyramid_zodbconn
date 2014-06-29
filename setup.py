@@ -40,7 +40,7 @@ docs_extras = ['Sphinx']
 testing_extras = ['nose', 'coverage']
 
 setup(name='pyramid_zodbconn',
-      version='0.5',
+      version='0.6',
       description=('Provide integration betwen Pyramid and ZODB'),
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
@@ -52,6 +52,7 @@ setup(name='pyramid_zodbconn',
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
         "Framework :: Pylons",
         "Topic :: Internet :: WWW/HTTP :: WSGI",
         "License :: Repoze Public License",
