@@ -1,9 +1,12 @@
+import datetime
 import sys
+import time
+
 from zodburi import resolve_uri
 from ZODB import DB
 from ZODB.ActivityMonitor import ActivityMonitor
 from pyramid.exceptions import ConfigurationError
-from pyramid.compat import text_
+from .compat import text_
 
 def get_connection(request, dbname=None):
     """
@@ -140,30 +143,55 @@ def includeme(config, db_from_uri=db_from_uri, open=open):
             stream = sys.stdout
         else:
             stream = open(txlog_filename, 'a')
-        transferlog = TransferLog(stream)
+        txlog_threshhold = config.registry.settings.get(
+            'zodbconn.transferlog_threshhold')
+        if txlog_threshhold is not None:
+            txlog_threshhold = int(txlog_threshhold)
+        transferlog = TransferLog(stream, txlog_threshhold)
         config.add_subscriber(transferlog.start, ZODBConnectionOpened)
         config.add_subscriber(transferlog.end, ZODBConnectionWillClose)
         config.registry._transferlog = transferlog # for testing only
 
 class TransferLog(object):
-    def __init__(self, stream):
+    key = '_pyramid_zodbconn_txlog_info'
+    def __init__(self, stream, threshhold):
         self.stream = stream
-        self.requests = {}
+        self.threshhold = threshhold
 
-    def start(self, event):
-        request_id = id(event.request)
-        info = self.requests[request_id] = {}
-        info['loads'], info['stores'] = event.conn.getTransferCounts()
+    def start(self, event, time=time):
+        # XXX time is parameterized only for testing
+        xfercounts = event.conn.getTransferCounts()
+        info = dict(
+            start=time.time(),
+            loads=xfercounts[0],
+            stores=xfercounts[1],
+            )
+        setattr(event.request, self.key, info)
 
-    def end(self,  event):
-        request_id = id(event.request)
-        info = self.requests.pop(request_id, None)
+    def end(self,  event, time=time):
+        # XXX time is parameterized only for testing
+        info = getattr(event.request, self.key, None)
         if info is not None:
+            now = time.time()
+            elapsed = now - info['start']
+            if self.threshhold is not None:
+                if elapsed < self.threshhold:
+                    return
             loads_after, stores_after = event.conn.getTransferCounts()
             loads = loads_after - info['loads']
             stores = stores_after - info['stores']
             request_method = event.request.method
             url = event.request.path_qs
-            value = '"%s","%s",%d,%d\n'  % (request_method, url, loads, stores)
+            ts = datetime.datetime.fromtimestamp(now).strftime(
+                "%Y-%m-%d %H:%M:%S"
+                )
+            value = '"%s", "%s", "%s", %.2f, %d, %d\n'  % (
+                ts,
+                request_method,
+                url,
+                elapsed,
+                loads,
+                stores
+                )
             self.stream.write(text_(value))
             self.stream.flush()
