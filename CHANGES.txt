@@ -1,3 +1,13 @@
+Next release
+------------
+
+- Transfer log file format changed to include timestamp and elapsed time.
+
+- ``zodbconn.transferlog_threshhold`` feature added (only log transfers if
+  a request took > threshhold secs).
+
+- Add ``docs`` section to tox.ini.
+
 0.6 (2014-06-29)
 ----------------
 

@@ -391,19 +391,30 @@ log should be sent to stdout.
 
 For example::
 
-  zodb.transferlog = /some/file/transfer.log
+  zodbconn.transferlog = /some/file/transfer.log
 
 The transfer log is written in CSV format.  Each line is in the format::
 
-  request_method,url,loads,stores
+  timestamp, request_method, url, elapsed_secs, loads, stores
 
 For example::
 
-  "GET","/manage/auditstream-sse",0,0
-  "GET","/manage/publishers/@@manage_main",113,0
-  "GET","/manage/auditstream-sse",0,0
-  "GET","/manage/auditstream-sse",0,0
-  "GET","/manage/publishers/@@contents",24368,0
+  "2014-07-02 13:44:18", "GET", "/manage/@@contents", 28.47, 23580, 0
+  "2014-07-02 13:44:18", "GET", "/manage/auditstream-sse", 0.02, 0, 0
+  "2014-07-02 13:44:18", "GET", "/sdistatic/css/sdi_bootstrap.css", 0.00, 0, 0
+  "2014-07-02 13:44:18", "GET", "/sdistatic/js/jquery-2.0.3.js", 0.00, 0, 0
+  "2014-07-02 13:44:18", "GET", "/sdistatic/js/bootstrap.js", 0.00, 0, 0
+  "2014-07-02 13:44:18", "GET", "/sdistatic/js/sdi.js", 0.00, 0, 0
+
+If you only want to write transfer log entries for requests that take over a
+certain amount of time, you can use the ``zodbconn.transferlog_threshhold``
+setting.  It should be an integer representing a number of seconds.  If the
+request consumes more than this number of seconds, a transfer log line will be
+written, otherwise no transfer log line will be written.
+
+For example::
+
+  zodbconn.transferlog_threshhold = 2
 
 More Information
 ----------------
