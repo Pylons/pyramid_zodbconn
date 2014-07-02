@@ -1,5 +1,5 @@
-Next release
-------------
+0.7 (2014-07-02)
+----------------
 
 - Transfer log file format changed to include timestamp and elapsed time.
 
