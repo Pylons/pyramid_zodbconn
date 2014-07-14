@@ -195,8 +195,8 @@ class TestTransferLog(unittest.TestCase):
         end = 1404321994.792902
         setattr(event.request, inst.key, {'loads':1, 'stores':1, 'start':begin})
         inst.end(event, time=FakeTimeModule(end))
-        self.assertEqual(inst.stream.getvalue(),
-                         '"2014-07-02 13:26:34", "GET", "", 1.00, -1, -1\n')
+        result = inst.stream.getvalue()
+        self.assertTrue('"GET", "", 1.00, -1, -1\n' in result, result)
 
     def test_limited_by_threshhold(self):
         inst = self._makeOne(threshhold=5)
@@ -214,8 +214,8 @@ class TestTransferLog(unittest.TestCase):
         end = 1404321995.792902
         setattr(event.request, inst.key, {'loads':1, 'stores':1, 'start':begin})
         inst.end(event, time=FakeTimeModule(end))
-        self.assertEqual(inst.stream.getvalue(),
-                         '"2014-07-02 13:26:35", "GET", "", 2.00, -1, -1\n')
+        result = inst.stream.getvalue()
+        self.assertTrue('"GET", "", 2.00, -1, -1\n' in result, result)
 
 class DummyDB:
     def __init__(self, connections=None):
