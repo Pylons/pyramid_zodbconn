@@ -107,8 +107,10 @@ example:
 Once this is done, you can use :func:`pyramid_zodbconn.get_connection` to
 obtain a reference to each of the named databases:
 
-        main_conn = get_connection(request) # main database
-        sessions_conn = get_connection(request, 'sessions')
+.. code-block:: python
+
+    main_conn = get_connection(request) # main database
+    sessions_conn = get_connection(request, 'sessions')
 
 The ``zodbconn.uri.sessions`` parameter example above is a URI which
 describes a ZODB database, in the same format as ``zodbconn.uri``.  You can
