@@ -38,7 +38,7 @@ docs_extras = ['Sphinx']
 testing_extras = ['nose', 'coverage']
 
 setup(name='pyramid_zodbconn',
-      version='0.8',
+      version='0.9.dev0',
       description=('Provide integration betwen Pyramid and ZODB'),
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
