@@ -3,7 +3,7 @@
 
 - Open primary database using ``request.tm``, if present, as the transaction
   manager.  If not present, fall back to the default / global transaction
-  manager.  Compatibility with ``pyramid_tm >= `0.11`, which allowed the
+  manager.  Compatibility with ``pyramid_tm >= 0.11``, which allowed the
   user to specify an explicit per-request transaction factory.
   https://github.com/Pylons/pyramid_zodbconn/issues/6.
 
@@ -14,10 +14,10 @@
 0.7 (2014-07-02)
 ----------------
 
-- Transfer log file format changed to include timestamp and elapsed time.
+- Change transfer log file format to include timestamp and elapsed time.
 
-- ``zodbconn.transferlog_threshhold`` feature added (only log transfers if
-  a request took > threshhold secs).
+- Add ``zodbconn.transferlog_threshhold`` feature:  only log transfers if
+  a request took > threshhold secs.
 
 - Add ``docs`` section to tox.ini.
 
@@ -40,12 +40,12 @@
 0.4 (2012-11-10)
 ----------------
 
-- Configure database with `ZODB.ActivityMonitor.ActivityMonitor`
+- Configure database with ``ZODB.ActivityMonitor.ActivityMonitor``.
 
 0.3 (2012-03-28)
 ----------------
 
-- Includeme docstring fix.
+- ``includeme`` docstring fix.
 
 - Add named database capability (see new docs section entitled "Named
   Database Support").
