@@ -16,7 +16,7 @@ class Test_get_connection(unittest.TestCase):
         request = self._makeRequest()
         del request.registry._zodb_databases
         self.assertRaises(ConfigurationError, self._callFUT, request)
-    
+
     def test_without_zodb_database(self):
         from pyramid.exceptions import ConfigurationError
         request = self._makeRequest()
@@ -27,7 +27,7 @@ class Test_get_connection(unittest.TestCase):
         from pyramid.exceptions import ConfigurationError
         request = self._makeRequest()
         self.assertRaises(ConfigurationError, self._callFUT, request, 'wont')
-        
+
     def test_primary_conn_already_exists(self):
         request = self._makeRequest()
         dummy_conn = DummyConnection()
@@ -42,12 +42,27 @@ class Test_get_connection(unittest.TestCase):
         request._primary_zodb_conn = dummy_conn
         conn = self._callFUT(request, 'secondary')
         self.assertEqual(conn, secondary)
-        
-    def test_primary_conn_new(self):
+
+    def test_primary_conn_new_wo_request_tm(self):
         request = self._makeRequest()
+        db = request.registry._zodb_databases['']
         conn = self._callFUT(request)
-        self.assertEqual(conn, 
-                         request.registry._zodb_databases[''].connection)
+        self.assertEqual(conn, db.connection)
+        self.assertEqual(db._opened_with, [None])
+        self.assertEqual(len(request.finished_callbacks), 1)
+        callback = request.finished_callbacks[0]
+        self.assertFalse(conn.closed)
+        callback(request)
+        self.assertTrue(conn.closed)
+        self.assertTrue(conn.transaction_manager.aborted)
+
+    def test_primary_conn_new_w_request_tm(self):
+        request = self._makeRequest()
+        tm = request.tm = object()
+        db = request.registry._zodb_databases['']
+        conn = self._callFUT(request)
+        self.assertEqual(conn, db.connection)
+        self.assertEqual(db._opened_with, [tm])
         self.assertEqual(len(request.finished_callbacks), 1)
         callback = request.finished_callbacks[0]
         self.assertFalse(conn.closed)
@@ -125,7 +140,7 @@ class Test_includeme(unittest.TestCase):
 
     def tearDown(self):
         testing.tearDown()
-    
+
     def _callFUT(self, config, db_from_uri=None, open=open):
         config.captured_uris = []
         self.db = DummyDB()
@@ -219,9 +234,11 @@ class Test_includeme(unittest.TestCase):
 
 class DummyDB:
     def __init__(self, connections=None):
+        self._opened_with = []
         self.databases = {'unnamed': self}
         self.connection = DummyConnection(connections)
-    def open(self):
+    def open(self, transaction_manager=None):
+        self._opened_with.append(transaction_manager)
         return self.connection
     def setActivityMonitor(self, am):
         self.am = am
