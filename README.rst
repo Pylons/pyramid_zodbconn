@@ -5,5 +5,5 @@ A package which provides integration between `ZODB <http://zodb.org>`_ and
 a Pyramid application.
 
 See the documentation at
-http://docs.pylonsproject.org/projects/pyramid-zodbconn/en/latest/ for more
+https://docs.pylonsproject.org/projects/pyramid-zodbconn/en/latest/ for more
 information.
