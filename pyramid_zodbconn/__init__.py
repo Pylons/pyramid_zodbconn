@@ -11,7 +11,7 @@ from .compat import text_
 def get_connection(request, dbname=None):
     """
     ``request`` must be a Pyramid request object.
-    
+
     When called with no ``dbname`` argument or a ``dbname`` argument of
     ``None``, return a connection to the primary datbase (the database set
     up as ``zodbconn.uri`` in the current configuration).
@@ -46,7 +46,8 @@ def get_connection(request, dbname=None):
             raise ConfigurationError(
                 'No zodbconn.uri defined in Pyramid settings')
 
-        primary_conn = primary_db.open()
+        tm = getattr(request, 'tm', None)
+        primary_conn = primary_db.open(transaction_manager=tm)
 
         registry.notify(ZODBConnectionOpened(primary_conn, request))
 
@@ -62,7 +63,7 @@ def get_connection(request, dbname=None):
 
     if dbname is None:
         return primary_conn
-    
+
     try:
         conn = primary_conn.get_connection(dbname)
     except KeyError:
