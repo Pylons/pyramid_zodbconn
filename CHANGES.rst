@@ -1,4 +1,4 @@
-0.8 (unreleased)
+0.8 (2017-07-25)
 ----------------
 
 - Open primary database using ``request.tm``, if present, as the transaction
