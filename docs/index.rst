@@ -13,7 +13,7 @@ Jython.  It requires ZODB >= 3.10.0.
 Installation
 ------------
 
-Install using setuptools, e.g. (within a virtualenv)::
+Install using setuptools, e.g. (within a virtual environment)::
 
   $ easy_install pyramid_zodbconn
 
@@ -198,7 +198,7 @@ An example that combines a path with a query string::
    file:///my/Data.fs?connection_cache_size=100&blobstorage_dir=/foo/bar
 
 ``zeo://`` URI scheme
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 The ``zeo://`` URI scheme can be passed as ``zodbconn.uri`` to create a ZODB
 ClientStorage database factory. Either the host and port parts of this scheme
@@ -326,7 +326,7 @@ In that case, use a URI with a fragment identifier::
     zconfig:///etc/myapp/zodb.conf#temp1
 
 ``memory://`` URI scheme
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``memory://`` URI scheme can be passed as ``zodbconn.uri`` to create a
 ZODB MappingStorage (memory-based) database factory.  The path info section
@@ -426,6 +426,15 @@ More Information
 
    api.rst
    glossary.rst
+
+
+Change History
+--------------
+
+.. toctree::
+   :maxdepth: 1
+
+   changes
 
 
 Reporting Bugs / Development Versions
