@@ -13,28 +13,26 @@
 ##############################################################################
 
 import os
-import sys
 
-from setuptools import setup, find_packages
+from setuptools import setup
+from setuptools import find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-try:
-    README = open(os.path.join(here, 'README.rst')).read()
-    CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
-except IOError:
-    README = CHANGES = ''
 
+def _read(filename):
+    try:
+        with open(os.path.join(here, filename)) as f:
+            return f.read()
+    except IOError:
+        return ''
 
-if sys.version_info < (3,):
-    install_requires = [
-        'pyramid',
-        'zodburi',
-        ]
-else:
-    install_requires = [
-        'pyramid',
-        'zodburi',
-        ]
+README = _read('README.rst')
+CHANGES = _read('CHANGES.txt')
+
+install_requires = [
+    'pyramid',
+    'zodburi',
+]
 
 docs_extras = ['Sphinx']
 testing_extras = ['nose', 'coverage']
@@ -55,7 +53,7 @@ setup(name='pyramid_zodbconn',
         "Framework :: Pylons",
         "Topic :: Internet :: WWW/HTTP :: WSGI",
         "License :: Repoze Public License",
-        ],
+      ],
       keywords='wsgi pylons pyramid zodb zodbconn',
       author="Chris McDonough",
       author_email="pylons-devel@googlegroups.com",
@@ -68,8 +66,8 @@ setup(name='pyramid_zodbconn',
       tests_require=install_requires,
       test_suite="pyramid_zodbconn",
       entry_points='',
-      extras_require = {
+      extras_require={
           'testing':testing_extras,
           'docs':docs_extras,
-          },
-      )
+      },
+)
