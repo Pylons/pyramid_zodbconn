@@ -18,39 +18,10 @@
 #sys.path.append(os.path.abspath('some/directory'))
 
 
-import sys, os
 import pkg_resources
+import pylons_sphinx_themes
+import datetime
 
-# Add and use Pylons theme
-if 'sphinx-build' in ' '.join(sys.argv): # protect against dumb importers
-    from subprocess import call, Popen, PIPE
-
-    p = Popen('which git', shell=True, stdout=PIPE)
-    git = p.stdout.read().strip()
-    cwd = os.getcwd()
-    _themes = os.path.join(cwd, '_themes')
-
-    if not os.path.isdir(_themes):
-        call([git, 'clone', 'git://github.com/Pylons/pylons_sphinx_theme.git',
-                '_themes'])
-    else:
-        os.chdir(_themes)
-        call([git, 'checkout', 'master'])
-        call([git, 'pull'])
-        os.chdir(cwd)
-
-    sys.path.append(os.path.abspath('_themes'))
-
-    parent = os.path.dirname(os.path.dirname(__file__))
-    sys.path.append(os.path.abspath(parent))
-    wd = os.getcwd()
-    os.chdir(parent)
-    os.system('%s setup.py test -q' % sys.executable)
-    os.chdir(wd)
-
-    for item in os.listdir(parent):
-        if item.endswith('.egg'):
-            sys.path.append(os.path.join(parent, item))
 
 # General configuration
 # ---------------------
@@ -78,7 +49,8 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'pyramid_zodbconn'
-copyright = '2011, Agendaless Consulting <chrism@plope.com>'
+thisyear = datetime.datetime.now().year
+copyright = '2011-%s, Agendaless Consulting <chrism@plope.com>' % thisyear
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -126,12 +98,15 @@ pygments_style = 'sphinx'
 # -----------------------
 
 # Add and use Pylons theme
-html_theme_path = ['_themes']
+html_theme_path = pylons_sphinx_themes.get_html_themes_path()
 html_theme = 'pyramid'
 html_theme_options = dict(
     github_url='https://github.com/Pylons/pyramid_zodbconn',
 #    in_progress='true'
     )
+html_theme_options = dict(
+    canonical_url='https://docs.pylonsproject.org/projects/pyramid-zodbconn/en/latest/'
+)
 
 # The style sheet to use for HTML and HTML Help pages. A file of that name
 # must exist either in Sphinx' static/ path, or in one of the custom paths
