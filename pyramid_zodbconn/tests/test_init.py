@@ -55,6 +55,70 @@ class Test_get_connection(unittest.TestCase):
         self.assertTrue(conn.closed)
         self.assertTrue(conn.transaction_manager.aborted)
 
+class TestTransferLog(unittest.TestCase):
+    def _makeOne(self, stream=None, threshhold=None):
+        from pyramid_zodbconn import TransferLog
+        if stream is None:
+            import io
+            stream = io.StringIO()
+        return TransferLog(stream, threshhold)
+
+    def test_start(self):
+        inst = self._makeOne()
+        event = DummyZODBEvent()
+        inst.start(event, time=FakeTimeModule())
+        info = getattr(event.request, inst.key)
+        self.assertEqual(info['loads'], 0)
+        self.assertEqual(info['stores'], 0)
+        self.assertEqual(info['start'], 0)
+
+    def test_end_info_is_None(self):
+        inst = self._makeOne()
+        event = DummyZODBEvent()
+        inst.end(event)
+        self.assertEqual(inst.stream.getvalue(), '')
+
+    def test_end_info_is_not_None(self):
+        inst = self._makeOne()
+        event = DummyZODBEvent()
+        begin = 1404321993.792902
+        end = 1404321994.792902
+        setattr(event.request, inst.key, {'loads':1, 'stores':1, 'start':begin})
+        inst.end(event, time=FakeTimeModule(end))
+        result = inst.stream.getvalue()
+        self.assertTrue('"GET", "", 1.00, -1, -1\n' in result, result)
+
+    def test_limited_by_threshhold(self):
+        inst = self._makeOne(threshhold=5)
+        event = DummyZODBEvent()
+        begin = 1404321993.792902
+        end = 1404321994.792902
+        setattr(event.request, inst.key, {'loads':1, 'stores':1, 'start':begin})
+        inst.end(event, time=FakeTimeModule(end))
+        self.assertEqual(inst.stream.getvalue(), '')
+
+    def test_not_limited_by_threshhold(self):
+        inst = self._makeOne(threshhold=1)
+        event = DummyZODBEvent()
+        begin = 1404321993.792902
+        end = 1404321995.792902
+        setattr(event.request, inst.key, {'loads':1, 'stores':1, 'start':begin})
+        inst.end(event, time=FakeTimeModule(end))
+        result = inst.stream.getvalue()
+        self.assertTrue('"GET", "", 2.00, -1, -1\n' in result, result)
+
+class Test_db_from_uri(unittest.TestCase):
+    def test_it(self):
+        from pyramid_zodbconn import db_from_uri
+        from ZODB.MappingStorage import MappingStorage
+        storage = MappingStorage()
+        def resolve_uri(uri):
+            def storagefactory():
+                return storage
+            return storagefactory, {}
+        db = db_from_uri('whatever', 'name', {}, resolve_uri=resolve_uri)
+        self.assertEqual(db._storage, storage)
+
 class Test_includeme(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
@@ -152,70 +216,6 @@ class Test_includeme(unittest.TestCase):
         self.assertEqual(L[1][0].__name__, 'end')
         self.assertEqual(self.config.registry._transferlog.stream, sys.stdout)
         self.assertEqual(self.config.registry._transferlog.threshhold, 1)
-
-class Test_db_from_uri(unittest.TestCase):
-    def test_it(self):
-        from pyramid_zodbconn import db_from_uri
-        from ZODB.MappingStorage import MappingStorage
-        storage = MappingStorage()
-        def resolve_uri(uri):
-            def storagefactory():
-                return storage
-            return storagefactory, {}
-        db = db_from_uri('whatever', 'name', {}, resolve_uri=resolve_uri)
-        self.assertEqual(db._storage, storage)
-
-class TestTransferLog(unittest.TestCase):
-    def _makeOne(self, stream=None, threshhold=None):
-        from pyramid_zodbconn import TransferLog
-        if stream is None:
-            import io
-            stream = io.StringIO()
-        return TransferLog(stream, threshhold)
-
-    def test_start(self):
-        inst = self._makeOne()
-        event = DummyZODBEvent()
-        inst.start(event, time=FakeTimeModule())
-        info = getattr(event.request, inst.key)
-        self.assertEqual(info['loads'], 0)
-        self.assertEqual(info['stores'], 0)
-        self.assertEqual(info['start'], 0)
-
-    def test_end_info_is_None(self):
-        inst = self._makeOne()
-        event = DummyZODBEvent()
-        inst.end(event)
-        self.assertEqual(inst.stream.getvalue(), '')
-
-    def test_end_info_is_not_None(self):
-        inst = self._makeOne()
-        event = DummyZODBEvent()
-        begin = 1404321993.792902
-        end = 1404321994.792902
-        setattr(event.request, inst.key, {'loads':1, 'stores':1, 'start':begin})
-        inst.end(event, time=FakeTimeModule(end))
-        result = inst.stream.getvalue()
-        self.assertTrue('"GET", "", 1.00, -1, -1\n' in result, result)
-
-    def test_limited_by_threshhold(self):
-        inst = self._makeOne(threshhold=5)
-        event = DummyZODBEvent()
-        begin = 1404321993.792902
-        end = 1404321994.792902
-        setattr(event.request, inst.key, {'loads':1, 'stores':1, 'start':begin})
-        inst.end(event, time=FakeTimeModule(end))
-        self.assertEqual(inst.stream.getvalue(), '')
-
-    def test_not_limited_by_threshhold(self):
-        inst = self._makeOne(threshhold=1)
-        event = DummyZODBEvent()
-        begin = 1404321993.792902
-        end = 1404321995.792902
-        setattr(event.request, inst.key, {'loads':1, 'stores':1, 'start':begin})
-        inst.end(event, time=FakeTimeModule(end))
-        result = inst.stream.getvalue()
-        self.assertTrue('"GET", "", 2.00, -1, -1\n' in result, result)
 
 class DummyDB:
     def __init__(self, connections=None):
