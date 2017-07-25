@@ -34,7 +34,7 @@ install_requires = [
     'zodburi',
 ]
 
-docs_extras = ['Sphinx']
+docs_extras = ['Sphinx', 'pylons-sphinx-themes']
 testing_extras = ['nose', 'coverage']
 
 setup(name='pyramid_zodbconn',
