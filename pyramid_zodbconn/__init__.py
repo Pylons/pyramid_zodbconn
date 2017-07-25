@@ -26,7 +26,7 @@ def get_connection(request, dbname=None):
     # never invoked
 
     # if this all looks very strange to you, please read:
-    # http://svn.zope.org/ZODB/trunk/src/ZODB/tests/multidb.txt?rev=99605&view=markup
+    # https://github.com/zopefoundation/ZODB/blob/master/src/ZODB/tests/multidb.txt
 
     registry = request.registry
 
@@ -71,32 +71,6 @@ def get_connection(request, dbname=None):
 
     return conn
 
-def db_from_uri(uri, dbname, dbmap, resolve_uri=resolve_uri):
-    storage_factory, dbkw = resolve_uri(uri)
-    dbkw['database_name'] = dbname
-    storage = storage_factory()
-    return DB(storage, databases=dbmap, **dbkw)
-
-NAMED = 'zodbconn.uri.'
-
-def get_uris(settings):
-    named = []
-    for k, v in settings.items():
-        if k.startswith(NAMED):
-            name = k[len(NAMED):]
-            if not name:
-                raise ConfigurationError(
-                    '%s is not a valid zodbconn identifier' % k)
-            named.append((name, v))
-    primary = settings.get('zodbconn.uri')
-    if primary is None and named:
-        raise ConfigurationError(
-            'Must have primary zodbconn.uri in settings containing named uris')
-    if primary:
-        yield '', primary
-        for name, uri in named:
-            yield name, uri
-
 class ConnectionEvent(object):
     """ Base class for ZODB connection events.  A connection event has two
     attributes: ``conn``, and ``request``.  ``conn`` is the ZODB connection
@@ -113,44 +87,6 @@ class ZODBConnectionWillClose(ConnectionEvent):
 
 class ZODBConnectionClosed(ConnectionEvent):
     """ An event sent when a ZODB connection is about to be closed """
-
-def includeme(config, db_from_uri=db_from_uri, open=open):
-    """
-    This includeme recognizes a ``zodbconn.uri`` setting in your deployment
-    settings and creates a ZODB database if it finds one.  ``zodbconn.uri``
-    is the database URI or URIs (either a whitespace-delimited string, a
-    carriage-return-delimed string or a list of strings).
-
-    Database is activated with `ZODB.ActivityMonitor.ActivityMonitor`.
-
-    It will also recognize *named* database URIs as long as an unnamed
-    database is in the configuration too:
-
-        zodbconn.uri.sessions = file:///home/project/var/Data.fs
-
-    Use the key ``zodbconn.transferlog`` in the deployment settings to specify
-    a filename to write ZODB load/store information to, or leave key's value
-    blank to send to stdout.
-    """
-    databases = config.registry._zodb_databases = {}
-    for name, uri in get_uris(config.registry.settings):
-        db = db_from_uri(uri, name, databases)
-        # ^^ side effect: populate "databases"
-        db.setActivityMonitor(ActivityMonitor())
-    txlog_filename = config.registry.settings.get('zodbconn.transferlog')
-    if txlog_filename is not None:
-        if txlog_filename.strip() == '':
-            stream = sys.stdout
-        else:
-            stream = open(txlog_filename, 'a')
-        txlog_threshhold = config.registry.settings.get(
-            'zodbconn.transferlog_threshhold')
-        if txlog_threshhold is not None:
-            txlog_threshhold = int(txlog_threshhold)
-        transferlog = TransferLog(stream, txlog_threshhold)
-        config.add_subscriber(transferlog.start, ZODBConnectionOpened)
-        config.add_subscriber(transferlog.end, ZODBConnectionWillClose)
-        config.registry._transferlog = transferlog # for testing only
 
 class TransferLog(object):
     key = '_pyramid_zodbconn_txlog_info'
@@ -195,3 +131,67 @@ class TransferLog(object):
                 )
             self.stream.write(text_(value))
             self.stream.flush()
+
+def db_from_uri(uri, dbname, dbmap, resolve_uri=resolve_uri):
+    storage_factory, dbkw = resolve_uri(uri)
+    dbkw['database_name'] = dbname
+    storage = storage_factory()
+    return DB(storage, databases=dbmap, **dbkw)
+
+NAMED = 'zodbconn.uri.'
+
+def get_uris(settings):
+    named = []
+    for k, v in settings.items():
+        if k.startswith(NAMED):
+            name = k[len(NAMED):]
+            if not name:
+                raise ConfigurationError(
+                    '%s is not a valid zodbconn identifier' % k)
+            named.append((name, v))
+    primary = settings.get('zodbconn.uri')
+    if primary is None and named:
+        raise ConfigurationError(
+            'Must have primary zodbconn.uri in settings containing named uris')
+    if primary:
+        yield '', primary
+        for name, uri in named:
+            yield name, uri
+
+def includeme(config, db_from_uri=db_from_uri, open=open):
+    """
+    This includeme recognizes a ``zodbconn.uri`` setting in your deployment
+    settings and creates a ZODB database if it finds one.  ``zodbconn.uri``
+    is the database URI or URIs (either a whitespace-delimited string, a
+    carriage-return-delimed string or a list of strings).
+
+    Database is activated with `ZODB.ActivityMonitor.ActivityMonitor`.
+
+    It will also recognize *named* database URIs as long as an unnamed
+    database is in the configuration too:
+
+        zodbconn.uri.sessions = file:///home/project/var/Data.fs
+
+    Use the key ``zodbconn.transferlog`` in the deployment settings to specify
+    a filename to write ZODB load/store information to, or leave key's value
+    blank to send to stdout.
+    """
+    databases = config.registry._zodb_databases = {}
+    for name, uri in get_uris(config.registry.settings):
+        db = db_from_uri(uri, name, databases)
+        # ^^ side effect: populate "databases"
+        db.setActivityMonitor(ActivityMonitor())
+    txlog_filename = config.registry.settings.get('zodbconn.transferlog')
+    if txlog_filename is not None:
+        if txlog_filename.strip() == '':
+            stream = sys.stdout
+        else:
+            stream = open(txlog_filename, 'a')
+        txlog_threshhold = config.registry.settings.get(
+            'zodbconn.transferlog_threshhold')
+        if txlog_threshhold is not None:
+            txlog_threshhold = int(txlog_threshhold)
+        transferlog = TransferLog(stream, txlog_threshhold)
+        config.add_subscriber(transferlog.start, ZODBConnectionOpened)
+        config.add_subscriber(transferlog.end, ZODBConnectionWillClose)
+        config.registry._transferlog = transferlog # for testing only
