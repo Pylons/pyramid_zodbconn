@@ -27,7 +27,7 @@ def _read(filename):
         return ''
 
 README = _read('README.rst')
-CHANGES = _read('CHANGES.txt')
+CHANGES = _read('CHANGES.rst')
 
 install_requires = [
     'pyramid',
