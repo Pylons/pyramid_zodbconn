@@ -1,5 +1,5 @@
-0.9 (unreleased)
-----------------
+0.8.1 (2017-07-26)
+------------------
 
 - Avoid aborting at the end of a request if there is no active transaction.
   See https://github.com/Pylons/pyramid_zodbconn/pull/10
