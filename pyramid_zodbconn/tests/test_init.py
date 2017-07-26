@@ -1,5 +1,6 @@
 import unittest
 from pyramid import testing
+from webtest import TestApp
 
 class Test_get_connection(unittest.TestCase):
     def _callFUT(self, request, dbname=None):
@@ -231,6 +232,31 @@ class Test_includeme(unittest.TestCase):
         self.assertEqual(L[1][0].__name__, 'end')
         self.assertEqual(self.config.registry._transferlog.stream, sys.stdout)
         self.assertEqual(self.config.registry._transferlog.threshhold, 1)
+
+class TestIntegration(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.config.add_settings({'zodbconn.uri': 'memory://'})
+        self.config.include('pyramid_zodbconn')
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def test_it(self):
+        from pyramid_zodbconn import get_connection
+        self.config.add_settings({'tm.manager_hook': 'pyramid_tm.explicit_manager'})
+        self.config.include('pyramid_tm')
+
+        def view(request):
+            conn = get_connection(request)
+            return 'bar'
+        self.config.add_route('foo', '/foo')
+        self.config.add_view(view, route_name='foo', renderer='string')
+        app = self.config.make_wsgi_app()
+        app = TestApp(app)
+        result = app.get('/foo')
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.body, b'bar')
 
 class DummyDB:
     def __init__(self, connections=None):
