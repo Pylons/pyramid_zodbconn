@@ -35,7 +35,7 @@ install_requires = [
 ]
 
 docs_extras = ['Sphinx', 'pylons-sphinx-themes']
-testing_extras = ['nose', 'coverage']
+testing_extras = ['nose', 'coverage', 'pyramid_tm', 'webtest']
 
 setup(name='pyramid_zodbconn',
       version='0.9.dev0',

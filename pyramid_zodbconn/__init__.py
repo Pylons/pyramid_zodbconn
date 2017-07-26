@@ -8,6 +8,13 @@ from ZODB.ActivityMonitor import ActivityMonitor
 from pyramid.exceptions import ConfigurationError
 from .compat import text_
 
+try:
+    from transaction.interfaces import NoTransaction
+except ImportError:  # pragma: no cover
+    # transaction package < 2.1 just define a fake class that will never match
+    class NoTransaction(Exception):
+        pass
+
 def get_connection(request, dbname=None):
     """
     ``request`` must be a Pyramid request object.
@@ -54,7 +61,10 @@ def get_connection(request, dbname=None):
         def finished(request):
             # closing the primary also closes any secondaries opened
             registry.notify(ZODBConnectionWillClose(primary_conn, request))
-            primary_conn.transaction_manager.abort()
+            try:
+                primary_conn.transaction_manager.abort()
+            except NoTransaction:
+                pass
             primary_conn.close()
             registry.notify(ZODBConnectionClosed(primary_conn, request))
 
