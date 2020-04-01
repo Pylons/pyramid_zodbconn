@@ -386,7 +386,7 @@ Transfer Log
 ------------
 
 Add the key ``zodbconn.transferlog`` to your deployment settings to have
-``pyramid_zodbconn`` send information about the ZODB stoage loads and stores
+``pyramid_zodbconn`` send information about the ZODB storage loads and stores
 caused by each request sent to the system.  The ``zodbconn.transferlog`` key
 can either be a filename or it can be empty, which indicates that the transfer
 log should be sent to stdout.
